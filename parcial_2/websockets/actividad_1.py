@@ -194,6 +194,32 @@ DASHBOARD_HTML = """
         // Inicializa powerChart con new Chart(...) igual que tempChart,
         // ajustando el eje Y al rango de watts (ej. min:100, max:400).
         // ============================================================
+        const powerData = {
+            'SRV-01': { labels: [], data: [], color: '#06b6d4' },
+            'SRV-02': { labels: [], data: [], color: '#10b981' },
+            'SRV-03': { labels: [], data: [], color: '#f59e0b' },
+        };
+
+        const powerChart = new Chart(document.getElementById('powerChart').getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: Object.entries(powerData).map(([id, d]) => ({
+                    label: id, data: d.data, borderColor: d.color,
+                    backgroundColor: 'transparent', borderWidth: 2,
+                    pointRadius: 0, tension: 0.3,
+                }))
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: { ticks: { color: '#64748b', maxTicksLimit: 8 }, grid: { color: '#1e293b' } },
+                    y: { min: 100, max: 400, ticks: { color: '#64748b' }, grid: { color: '#1e293b' } }
+                },
+                plugins: { legend: { labels: { color: '#94a3b8', usePointStyle: true } } }
+            }
+        });
+
 
 
         // ============================================================
@@ -204,12 +230,23 @@ DASHBOARD_HTML = """
         // Luego llámala dentro de socket.on('sensor_update', ...) abajo.
         // ============================================================
 
+        function updatePowerChart(data) {
+            const d = powerData[data.device_id];
+            if (!d) return;
+            d.labels.push(data.timestamp);
+            d.data.push(data.power_w);
+            if (d.data.length > MAX_POINTS) { d.labels.shift(); d.data.shift(); }
+            powerChart.data.labels = powerData['SRV-01'].labels;
+            powerChart.update('none');
+        }
+
 
         // ============================================================
         // RECIBIR DATOS DEL SERVIDOR
         // ============================================================
         socket.on('sensor_update', (data) => {
             updateTempChart(data);
+            updatePowerChart(data);
             // TODO: llamar updatePowerChart(data) aquí
         });
 

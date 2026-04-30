@@ -29,7 +29,7 @@ app = Flask(__name__)
 
 # ---- CONFIGURACIÓN ----
 WEBHOOK_URL       = "http://localhost:5001/webhook"
-TEMP_UMBRAL       = 35.0   # °C — por encima de esto se dispara el webhook
+TEMP_UMBRAL       = 30.0   # °C — por encima de esto se dispara el webhook
 # -----------------------
 
 
@@ -52,7 +52,17 @@ def disparar_webhook(data: dict):
 
     Pista: es exactamente lo que hacía sim.py para mandar datos al servidor.
     """
-    # Tu código aquí
+    payload = {
+        "device_id": data["device_id"],
+        "temperature_c": data["temperature_c"],
+        "timestamp": data.get("timestamp", ""),
+        "alerta": f"Temperatura critica {data['temperature_c']}"
+    }
+    try:
+        r = requests.post(WEBHOOK_URL, json=payload)
+        print(f"Webhook enviado: {payload} → status {r.status_code}")
+    except Exception as e:
+        print("Error al enviar webhook:", e)    
     pass
 
 
@@ -75,6 +85,9 @@ def receive_sensor_data():
 
     estado = "ALERTA" if temp > TEMP_UMBRAL else "normal"
     print(f"[{now}] {device}  temp={temp}°C  → {estado}")
+
+    if temp > TEMP_UMBRAL:
+        disparar_webhook(data)
 
     # TODO: si temp > TEMP_UMBRAL, disparar el webhook
 

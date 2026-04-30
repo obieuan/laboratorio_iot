@@ -46,7 +46,12 @@ def on_message(client, userdata, msg):
 
     Si el JSON está malformado, imprime el error y no hagas nada.
     """
-    # Tu código aquí
+    try:
+        data = json.loads(msg.payload.decode())
+        requests.post(SERVER_URL, json=data)
+        print(f" {data['device_id']} → {data['temperature']}°C")
+    except Exception as e:
+        print("Error al procesar mensaje MQTT:", e)
     pass
 
 
@@ -62,7 +67,11 @@ def main():
 
     Pista: es exactamente como en la Práctica 5A.
     """
-    # Tu código aquí
+    client = mqtt.Client()
+    client.on_message = on_message
+    client.connect(BROKER, 1883)
+    client.subscribe(TOPIC)
+    client.loop_forever()
     pass
 
 
